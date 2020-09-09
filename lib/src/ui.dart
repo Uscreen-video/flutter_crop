@@ -110,13 +110,21 @@ class _CropState extends State<Crop> with TickerProviderStateMixin {
     final br = line(image.bottomRight, image.topRight, canvas.bottomRight);
     final bl = line(image.bottomLeft, image.bottomRight, canvas.bottomLeft);
 
+    print('scale: $s');
+		print('tl: $tl,\n tr: $tr,\n br: $br,\n dbl: $bl');
+		print('dumb: ${canvas.topLeft.dx - image.topLeft.dx}');
+		print('image: ${image.topLeft}');
+		print('image: ${image.topLeft}');
+
     final dtl = side(image.topLeft, image.bottomLeft, canvas.topLeft);
     final dtr = side(image.topRight, image.topLeft, canvas.topRight);
     final dbr = side(image.bottomRight, image.topRight, canvas.bottomRight);
     final dbl = side(image.bottomLeft, image.bottomRight, canvas.bottomLeft);
 
+		print('dtl: $dtl,\n dtr: $dtr,\n dbr: $dbr,\n dbl: $dbl');
+
     if (dtl > 0) {
-      final d = canvas.topLeft - tl;
+      final d = Offset(canvas.topLeft.dx - tl.dx, canvas.topLeft.dy);
       _endOffset += d;
     }
 
@@ -318,6 +326,7 @@ class _CropState extends State<Crop> with TickerProviderStateMixin {
 class CropController extends ChangeNotifier {
   final _previewKey = GlobalKey();
   double _aspectRatio = 1;
+  double _imageAspectRatio = 1;
   double _rotation = 0;
   double _scale = 1;
   Offset _offset = Offset.zero;
@@ -325,6 +334,12 @@ class CropController extends ChangeNotifier {
   double get aspectRatio => _aspectRatio;
   set aspectRatio(double value) {
     _aspectRatio = value;
+    notifyListeners();
+  }
+
+  double get imageAspectRatio => _imageAspectRatio;
+  set imageAspectRatio(double value) {
+    _imageAspectRatio = value;
     notifyListeners();
   }
 
@@ -353,10 +368,12 @@ class CropController extends ChangeNotifier {
 
   CropController({
     double aspectRatio: 1.0,
+    double imageAspectRatio: 1.0,
     double scale: 1.0,
     double rotation: 0,
   }) {
     _aspectRatio = aspectRatio;
+    _imageAspectRatio = imageAspectRatio;
     _scale = scale;
     _rotation = rotation;
   }
@@ -371,7 +388,7 @@ class CropController extends ChangeNotifier {
     final x = cosr * _aspectRatio + sinr;
     final y = sinr * _aspectRatio + cosr;
 
-    final m = max(x / _aspectRatio, y);
+    final m = max(x / _imageAspectRatio, y);
 
     return m;
   }
