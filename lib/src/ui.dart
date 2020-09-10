@@ -87,81 +87,35 @@ class _CropState extends State<Crop> with TickerProviderStateMixin {
     _animation = CurvedAnimation(curve: Curves.easeInOut, parent: _controller);
     _animation.addListener(() {
       if (_animation.isCompleted) {
-        _reCenterImageNoAnimation();
+        _reCenterImage(animated: false);
       }
       setState(() {});
     });
     super.initState();
   }
 
-  void _reCenterImage() {
+  void _reCenterImage({animated = true}) {
     final sz = _key.currentContext.size;
     final s = widget.controller._scale * widget.controller._getMinScale();
     final w = sz.width;
     final h = sz.height;
     final canvas = Rect.fromLTWH(0, 0, w, h);
+    final imageCanvas = (widget.controller.imageAspectRatio < 1)
+        ? Rect.fromLTWH(
+            (w - w * widget.controller.imageAspectRatio) / 2,
+            0,
+            w * widget.controller.imageAspectRatio,
+            h,
+          )
+        : Rect.fromLTWH(
+            0,
+            (h - h / widget.controller.imageAspectRatio) / 2,
+            w,
+            h / widget.controller.imageAspectRatio,
+          );
+
     final image = getRotated(
-        canvas, widget.controller._rotation, s, widget.controller._offset);
-    _startOffset = widget.controller._offset;
-    _endOffset = widget.controller._offset;
-
-    final tl = line(image.topLeft, image.bottomLeft, canvas.topLeft);
-    final tr = line(image.topLeft, image.topRight, canvas.topRight);
-    final br = line(image.bottomRight, image.topRight, canvas.bottomRight);
-    final bl = line(image.bottomLeft, image.bottomRight, canvas.bottomLeft);
-
-    print('scale: $s');
-		print('tl: $tl,\n tr: $tr,\n br: $br,\n dbl: $bl');
-		print('dumb: ${canvas.topLeft.dx - image.topLeft.dx}');
-		print('image: ${image.topLeft}');
-		print('image: ${image.topLeft}');
-
-    final dtl = side(image.topLeft, image.bottomLeft, canvas.topLeft);
-    final dtr = side(image.topRight, image.topLeft, canvas.topRight);
-    final dbr = side(image.bottomRight, image.topRight, canvas.bottomRight);
-    final dbl = side(image.bottomLeft, image.bottomRight, canvas.bottomLeft);
-
-		print('dtl: $dtl,\n dtr: $dtr,\n dbr: $dbr,\n dbl: $dbl');
-
-    if (dtl > 0) {
-      final d = Offset(canvas.topLeft.dx - tl.dx, canvas.topLeft.dy);
-      _endOffset += d;
-    }
-
-    if (dtr > 0) {
-      final d = canvas.topRight - tr;
-      _endOffset += d;
-    }
-
-    if (dbr > 0) {
-      final d = canvas.bottomRight - br;
-      _endOffset += d;
-    }
-    if (dbl > 0) {
-      final d = canvas.bottomLeft - bl;
-      _endOffset += d;
-    }
-
-    widget.controller._offset = _endOffset;
-
-    if (_controller.isCompleted || _controller.isAnimating) {
-      _controller.reset();
-    }
-    _controller.forward();
-
-    setState(() {});
-
-    _handleOnChanged();
-  }
-
-  void _reCenterImageNoAnimation() {
-    final sz = _key.currentContext.size;
-    final s = widget.controller._scale * widget.controller._getMinScale();
-    final w = sz.width;
-    final h = sz.height;
-    final canvas = Rect.fromLTWH(0, 0, w, h);
-    final image = getRotated(
-        canvas, widget.controller._rotation, s, widget.controller._offset);
+        imageCanvas, widget.controller._rotation, s, widget.controller._offset);
     _startOffset = widget.controller._offset;
     _endOffset = widget.controller._offset;
 
@@ -194,7 +148,15 @@ class _CropState extends State<Crop> with TickerProviderStateMixin {
       _endOffset += d;
     }
 
-    _startOffset = _endOffset;
+    if (animated) {
+      if (_controller.isCompleted || _controller.isAnimating) {
+        _controller.reset();
+      }
+      _controller.forward();
+    } else {
+      _startOffset = _endOffset;
+    }
+
     widget.controller._offset = _endOffset;
 
     setState(() {});
@@ -368,12 +330,12 @@ class CropController extends ChangeNotifier {
 
   CropController({
     double aspectRatio: 1.0,
-    double imageAspectRatio: 1.0,
+    double imageAspectRatio,
     double scale: 1.0,
     double rotation: 0,
   }) {
     _aspectRatio = aspectRatio;
-    _imageAspectRatio = imageAspectRatio;
+    _imageAspectRatio = imageAspectRatio ?? aspectRatio;
     _scale = scale;
     _rotation = rotation;
   }
@@ -388,9 +350,11 @@ class CropController extends ChangeNotifier {
     final x = cosr * _aspectRatio + sinr;
     final y = sinr * _aspectRatio + cosr;
 
-    final m = max(x / _imageAspectRatio, y);
+    if (_imageAspectRatio < 1) {
+      return max(x / _imageAspectRatio, y);
+    }
 
-    return m;
+    return max(x, y * _imageAspectRatio);
   }
 
   /// Capture an image of the current state of this widget and its children.
