@@ -27,3 +27,5 @@ Then, in your code import:
 import 'package:crop/crop.dart';
 ```
 Now in build function, put a `Crop` widget in the widget tree and you are done. Please don't forget to check ```/example``` folder, there is much more.
+
+Portrait sample [photo](https://unsplash.com/photos/XmC9mBSCPzM) by [Daniel J. Schwarz](https://unsplash.com/@danieljschwarz)

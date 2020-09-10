@@ -28,7 +28,21 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final controller = CropController(aspectRatio: 1000 / 667.0);
+  final controller = CropController(
+    aspectRatio: 1000 / 667.0,
+    imageAspectRatio: 1000 / 667.0,
+  );
+  final images = {
+    'landscape': {
+      'path': 'images/sample.jpg',
+      'aspectRatio': 1000 / 667,
+    },
+    'portrait': {
+      'path': 'images/sample_portrait.jpg',
+      'aspectRatio': 640 / 960,
+    },
+  };
+  String selectedImage = 'landscape';
   double _rotation = 0;
   BoxShape shape = BoxShape.rectangle;
 
@@ -106,14 +120,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 },
                 controller: controller,
                 shape: shape,
-                child: Image.asset(
-                  'images/sample.jpg',
-                  fit: BoxFit.cover,
-                ),
-                /* It's very important to set `fit: BoxFit.cover`.
-                   Do NOT remove this line.
-                   There are a lot of issues on github repo by people who remove this line and their image is not shown correctly.
-                */
+                child: Image.asset(images[selectedImage]['path']),
                 foreground: IgnorePointer(
                   child: Container(
                     alignment: Alignment.bottomRight,
@@ -166,6 +173,20 @@ class _MyHomePageState extends State<MyHomePage> {
                     },
                   ),
                 ),
+              ),
+              IconButton(
+                icon: Icon(selectedImage == 'portrait' ?  Icons.landscape : Icons.portrait),
+                tooltip: 'Image orientation',
+                onPressed: () {
+                  controller.rotation = 0;
+                  controller.scale = 1;
+                  controller.offset = Offset.zero;
+                  setState(() {
+                    _rotation = 0;
+                    selectedImage = (selectedImage == 'portrait') ? 'landscape' : 'portrait';
+                    controller.imageAspectRatio = images[selectedImage]['aspectRatio'];
+                  });
+                },
               ),
               PopupMenuButton<BoxShape>(
                 icon: Icon(Icons.crop_free),
